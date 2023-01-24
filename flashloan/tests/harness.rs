@@ -1,7 +1,4 @@
-use fuels::{
-    prelude::*,
-    tx::ContractId,
-};
+use fuels::{prelude::*, tx::ContractId};
 
 macro_rules! fn_selector {
     ( $fn_name: ident ( $($fn_arg: ty),* )  ) => {
@@ -14,19 +11,13 @@ macro_rules! calldata {
     }
 }
 
-
-
 // Load abi from json
-abigen!(
-    Flashloan,
-    "out/debug/flashloan-abi.json"
-);
+abigen!(Flashloan, "out/debug/flashloan-abi.json");
 
 abigen!(
     Callee,
     "../flashloanCallee/out/debug/flashloanCallee-abi.json"
 );
-
 
 async fn get_contract_instances() -> (Flashloan, ContractId) {
     // Launch a local network and deploy the contract
@@ -47,58 +38,54 @@ async fn get_contract_instances() -> (Flashloan, ContractId) {
         &wallet,
         TxParameters::default(),
         StorageConfiguration::with_storage_path(Some(
-            "../flashloan/out/debug/flashloan-storage_slots.json"
-                .to_string(),
+            "../flashloan/out/debug/flashloan-storage_slots.json".to_string(),
         )),
     )
     .await
     .unwrap();
     let instance = Flashloan::new(id.clone(), wallet.clone());
 
-
     let callee_id = Contract::deploy(
         "../flashloanCallee/out/debug/flashloanCallee.bin",
         &wallet,
         TxParameters::default(),
         StorageConfiguration::with_storage_path(Some(
-            "../flashloanCallee/out/debug/flashloanCallee-storage_slots.json"
-                .to_string(),
+            "../flashloanCallee/out/debug/flashloanCallee-storage_slots.json".to_string(),
         )),
     )
     .await
     .unwrap();
 
-
     (instance, callee_id.into())
 }
 
-
-
 #[tokio::test]
 async fn can_flashloan() {
-
     let (instance, target) = get_contract_instances().await;
 
     let function_selector = fn_selector!(my_func(bool));
     let calldata = calldata!(false);
 
-    let tx = instance.methods().flashloan(100, target, function_selector, calldata, true, 1_000_000).set_contracts(&[target.into()]).tx_params(TxParameters::default());
+    let tx = instance
+        .methods()
+        .flashloan(100, target, function_selector, calldata, true, 1_000_000)
+        .set_contracts(&[target.into()])
+        .tx_params(TxParameters::default());
     let _result = tx.call().await.unwrap();
 }
-
 
 #[tokio::test]
 #[should_panic(expected = "LoanNotRepaid")]
 async fn reverts_if_not_fully_repaid() {
-
     let (instance, target) = get_contract_instances().await;
 
     let function_selector = fn_selector!(my_func(bool));
     let calldata = calldata!(true);
 
-    let tx = instance.methods().flashloan(100, target, function_selector, calldata, true, 1_000_000).set_contracts(&[target.into()]).tx_params(TxParameters::default());
+    let tx = instance
+        .methods()
+        .flashloan(100, target, function_selector, calldata, true, 1_000_000)
+        .set_contracts(&[target.into()])
+        .tx_params(TxParameters::default());
     let _result = tx.call().await.unwrap();
 }
-
-
-
