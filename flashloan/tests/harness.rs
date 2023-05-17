@@ -31,6 +31,7 @@ async fn get_contract_instances() -> (Flashloan, ContractId) {
         None,
     )
     .await;
+
     let wallet = wallets.pop().unwrap();
 
     let id = Contract::deploy(
@@ -43,7 +44,7 @@ async fn get_contract_instances() -> (Flashloan, ContractId) {
     )
     .await
     .unwrap();
-    let instance = Flashloan::new(id.clone(), wallet.clone());
+    let instance: Flashloan = Flashloan::new(id.clone(), wallet.clone());
 
     let callee_id = Contract::deploy(
         "../flashloanCallee/out/debug/flashloanCallee.bin",
@@ -56,9 +57,13 @@ async fn get_contract_instances() -> (Flashloan, ContractId) {
     .await
     .unwrap();
 
-    (instance, callee_id.into())
+    let callee_id: ContractId = callee_id.into();
+
+    (instance, callee_id)
 }
 
+// TODO: Does not test the flash_fee being paid yet, as the flashloanCallee contract does not have extra coins to pay the fee
+// Currently the fee is being rounded down to 0 so this test passes
 #[tokio::test]
 async fn can_flashloan() {
     let (instance, target) = get_contract_instances().await;

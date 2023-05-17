@@ -53,6 +53,7 @@ impl FlashLoan for Contract {
         // (compiler will warn about reentrancy here as we are reading the balance tree after an external call)
         let expected_balance_after_repay = flash_fee(amount) + free_balance;
         require(this_balance(contract_id()) >= expected_balance_after_repay, FlashLoanError::LoanNotRepaid(expected_balance_after_repay - this_balance(contract_id())));
+        
 
         // Burn the tokens that were minted.
         burn(amount);
@@ -64,5 +65,5 @@ impl FlashLoan for Contract {
 }
 
 fn flash_fee(amount: u64) -> u64 {
-    amount / 1000 * 10 // 1% fee
+    amount * 10 / 10000 // 0.1% fee
 }
