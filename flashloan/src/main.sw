@@ -7,7 +7,10 @@ use std::low_level_call::{call_with_function_selector_vec, CallParams};
 use std::token::{burn, mint};
 
 abi FlashLoan {
+    #[payable]
     fn flashloan(amount: u64, target: ContractId, function_selector: Vec<u8>, calldata: Vec<u8>, single_copy_type: bool, gas_required: u64);
+
+    fn flash_fee(amount: u64) -> u64;
 }
 
 enum FlashLoanError {
@@ -22,6 +25,7 @@ impl FlashLoan for Contract {
     /// `calldata` : The calldata to pass to the target contract.
     /// `single_copy_type` : Whether the calldata passed to the target contract is a single copy type (as opposed to a pointer)
     /// `gas_required` : The amount of gas to forward to the target contract.
+    #[payable]
     fn flashloan(
         amount: u64,
         target: ContractId,
@@ -47,9 +51,18 @@ impl FlashLoan for Contract {
 
         // Check that the loan has been repaid.
         // (compiler will warn about reentrancy here as we are reading the balance tree after an external call)
-        require(this_balance(contract_id()) >= free_balance, FlashLoanError::LoanNotRepaid(free_balance - this_balance(contract_id())));
+        let expected_balance_after_repay = flash_fee(amount) + free_balance;
+        require(this_balance(contract_id()) >= expected_balance_after_repay, FlashLoanError::LoanNotRepaid(expected_balance_after_repay - this_balance(contract_id())));
 
         // Burn the tokens that were minted.
         burn(amount);
     }
+
+    fn flash_fee(amount: u64) -> u64 {
+        flash_fee(amount)
+    }
+}
+
+fn flash_fee(amount: u64) -> u64 {
+    amount / 1000 * 10 // 1% fee
 }
