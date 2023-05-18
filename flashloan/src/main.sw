@@ -65,5 +65,5 @@ impl FlashLoan for Contract {
 }
 
 fn flash_fee(amount: u64) -> u64 {
-    amount * 10 / 10000 // 0.1% fee
+    amount * 10 / 1000 // 1% fee
 }

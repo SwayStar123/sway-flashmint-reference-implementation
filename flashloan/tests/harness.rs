@@ -19,13 +19,33 @@ abigen!(
     "../flashloanCallee/out/debug/flashloanCallee-abi.json"
 );
 
-async fn get_contract_instances() -> (Flashloan, ContractId) {
+async fn get_contract_instances() -> (Flashloan, ContractId, WalletUnlocked) {
     // Launch a local network and deploy the contract
+    let id = Contract::load_contract(
+        "../flashloan/out/debug/flashloan.bin",
+        &Some("../flashloan/out/debug/flashloan-storage_slots.json".to_string()),
+    )
+    .unwrap();
+    let (id, _) = Contract::compute_contract_id_and_state_root(&id);
+
     let mut wallets = launch_custom_provider_and_get_wallets(
-        WalletsConfig::new(
-            Some(1),             /* Single wallet */
-            Some(1),             /* Single coin (UTXO) */
-            Some(1_000_000_000), /* Amount per coin */
+        WalletsConfig::new_multiple_assets(
+            // Some(1),             /* Single wallet */
+            // Some(1),             /* Single coin (UTXO) */
+            // Some(1_000_000_000), /* Amount per coin */
+            2,
+            vec![
+                AssetConfig {
+                    id: AssetId::default(),
+                    num_coins: 1,
+                    coin_amount: 1000000,
+                },
+                AssetConfig {
+                    id: AssetId::new(*id),
+                    num_coins: 1,
+                    coin_amount: 1000000,
+                },
+            ],
         ),
         None,
         None,
@@ -59,21 +79,23 @@ async fn get_contract_instances() -> (Flashloan, ContractId) {
 
     let callee_id: ContractId = callee_id.into();
 
-    (instance, callee_id)
+    (instance, callee_id, wallet)
 }
 
-// TODO: Does not test the flash_fee being paid yet, as the flashloanCallee contract does not have extra coins to pay the fee
-// Currently the fee is being rounded down to 0 so this test passes
 #[tokio::test]
 async fn can_flashloan() {
-    let (instance, target) = get_contract_instances().await;
+    let (instance, target, wallet) = get_contract_instances().await;
+
+    let instance_contract_id: ContractId = instance.get_contract_id().into();
+
+    wallet.force_transfer_to_contract(&target.into(), 10, AssetId::new(*instance_contract_id), TxParameters::default()).await.unwrap();
 
     let function_selector = fn_selector!(my_func(bool));
     let calldata = calldata!(false);
 
     let tx = instance
         .methods()
-        .flashloan(100, target, function_selector, calldata, true, 1_000_000)
+        .flashloan(1000, target, function_selector, calldata, true, 1_000_000)
         .set_contracts(&[target.into()])
         .tx_params(TxParameters::default());
     let _result = tx.call().await.unwrap();
@@ -82,7 +104,7 @@ async fn can_flashloan() {
 #[tokio::test]
 #[should_panic(expected = "LoanNotRepaid")]
 async fn reverts_if_not_fully_repaid() {
-    let (instance, target) = get_contract_instances().await;
+    let (instance, target, _) = get_contract_instances().await;
 
     let function_selector = fn_selector!(my_func(bool));
     let calldata = calldata!(true);

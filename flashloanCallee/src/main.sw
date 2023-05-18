@@ -19,7 +19,7 @@ impl Callee for Contract {
         if underpay {
             force_transfer_to_contract(msg_amount() - 1, msg_asset_id(), msg_asset_id());
         } else {
-            force_transfer_to_contract(msg_amount(), msg_asset_id(), msg_asset_id());
+            force_transfer_to_contract(msg_amount() + (msg_amount() * 10 / 1000), msg_asset_id(), msg_asset_id());
         };
     }
 }
