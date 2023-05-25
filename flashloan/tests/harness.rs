@@ -90,12 +90,13 @@ async fn can_flashloan() {
 
     wallet.force_transfer_to_contract(&target.into(), 10, AssetId::new(*instance_contract_id), TxParameters::default()).await.unwrap();
 
-    let function_selector = fn_selector!(my_func(bool));
-    let calldata = calldata!(false);
+    // let function_selector = fn_selector!(my_func(bool));
+    // let calldata = calldata!(false);
+    let calldata = vec![0];
 
     let tx = instance
         .methods()
-        .flashloan(1000, target, function_selector, calldata, true, 1_000_000)
+        .flash_mint(1000, target, calldata, 1_000_000)
         .set_contracts(&[target.into()])
         .tx_params(TxParameters::default());
     let _result = tx.call().await.unwrap();
@@ -106,12 +107,13 @@ async fn can_flashloan() {
 async fn reverts_if_not_fully_repaid() {
     let (instance, target, _) = get_contract_instances().await;
 
-    let function_selector = fn_selector!(my_func(bool));
-    let calldata = calldata!(true);
+    // let function_selector = fn_selector!(my_func(bool));
+    // let calldata = calldata!(true);
+    let calldata = vec![1];
 
     let tx = instance
         .methods()
-        .flashloan(100, target, function_selector, calldata, true, 1_000_000)
+        .flash_mint(100, target, calldata, 1_000_000)
         .set_contracts(&[target.into()])
         .tx_params(TxParameters::default());
     let _result = tx.call().await.unwrap();

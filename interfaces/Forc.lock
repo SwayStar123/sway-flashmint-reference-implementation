@@ -3,16 +3,8 @@ name = 'core'
 source = 'path+from-root-A45E318ED12CBB09'
 
 [[package]]
-name = 'flashloanCallee'
-source = 'member'
-dependencies = [
-    'interfaces',
-    'std',
-]
-
-[[package]]
 name = 'interfaces'
-source = 'path+from-root-BACDE979274820EE'
+source = 'member'
 dependencies = ['std']
 
 [[package]]
