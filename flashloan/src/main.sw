@@ -11,16 +11,15 @@ use std::token::{burn, mint};
 impl FlashMinter for Contract {
     /// `amount` : The amount of tokens to mint and forward to the target contract.
     /// `target` : The contract to call.
-    /// `function_selector` : The function selector of the function to call on the target contract.
-    /// `calldata` : The calldata to pass to the target contract.
-    /// `single_copy_type` : Whether the calldata passed to the target contract is a single copy type (as opposed to a pointer)
-    /// `gas_required` : The amount of gas to forward to the target contract.
+    /// `calldata` : The calldata to pass to the borrower contract.
+    /// `gas_required` : The amount of gas to forward to the borrower contract.
     fn flash_mint(
         amount: u64,
         target: ContractId,
         calldata: Vec<u8>,
         gas_required: u64,
     ) {
+        require(amount <= max_flash_mint(), FlashLoanError::AmountOverMaximum);
         // Mint tokens
         mint(amount);
 
@@ -52,8 +51,16 @@ impl FlashMinter for Contract {
     fn flash_fee(amount: u64) -> u64 {
         flash_fee(amount)
     }
+
+    fn max_flash_mint() -> u64 {
+        max_flash_mint()
+    }
 }
 
 fn flash_fee(amount: u64) -> u64 {
     amount * 10 / 1000 // 1% fee
+}
+
+fn max_flash_mint() -> u64 {
+    1_000_000_000_000
 }

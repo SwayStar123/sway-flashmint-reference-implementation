@@ -3,6 +3,8 @@ library;
 pub enum FlashLoanError {
     // The loan was not repaid. The amount of the loan that was not repaid is returned.
     LoanNotRepaid: u64,
+    // Amount requested for flashmint is over the maximum amount
+    AmountOverMaximum,
 }
 
 abi FlashMinter {
@@ -12,6 +14,7 @@ abi FlashMinter {
         gas_required: u64,);
 
     fn flash_fee(amount: u64) -> u64;
+    fn max_flash_mint() -> u64;
 }
 
 abi FlashBorrower {
