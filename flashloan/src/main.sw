@@ -43,7 +43,6 @@ impl FlashMinter for Contract {
         let expected_balance_after_repay = fee + free_balance;
         require(this_balance(contract_id()) >= expected_balance_after_repay, FlashLoanError::LoanNotRepaid(expected_balance_after_repay - this_balance(contract_id())));
         
-
         // Burn the tokens that were minted.
         burn(amount);
     }
